@@ -1,0 +1,151 @@
+---
+title: Análise exploratória de dados para modelo classificador de vítimas motociclistas no trânsito
+
+format: 
+  html: 
+    toc: true
+    toc-depth: 2
+---
+
+- Os dados foram coletados e tratados em `data-raw/` e armazenados em `data/`.
+- Podem ser importados e analisados para prever ser um modelo classificador pode ser utilizado.
+
+## Importação
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(onsvplot)
+library(here)
+library(knitr)
+load(here("data","sim.rda"))
+```
+
+## Limpeza e Tratamento de dados
+
+```{r}
+df <- sim |> 
+  separate(
+    IDADE,
+    into = c("idade","unidade"),
+    sep = " "
+  ) |> 
+  mutate(
+    idade = as.numeric(idade),
+    idade = if_else(unidade == "anos", idade, 0),
+  )
+
+df |> head() |> kable()
+```
+
+```{r}
+df |> filter(idade == 0) |> head() |> kable()
+```
+
+
+```{r}
+df |> filter(idade < 10) |> head() |> kable()
+```
+
+```{r}
+df_rename <- df |> 
+  select(-unidade, -CAUSABAS) |> 
+  rename(cor = RACACOR, 
+         sexo = SEXO, 
+         escolaridade = ESC, 
+         estado_civil = ESTCIV,
+         data = DTOBITO,
+         escola_decod = ESC_DECOD,
+         local = LOCOCOR,
+         motociclista = MOTOCICLISTA)
+
+df_rename |> head() |> kable()
+```
+
+## Iniciando EDA
+
+```{r}
+ggplot(drop_na(df_rename), aes(x = estado_civil, y = idade, color = estado_civil)) +
+  geom_boxplot(outlier.alpha = 0.1) +
+  scale_discrete_onsv()
+```
+
+```{r}
+ggplot(df_rename, aes(x = idade, fill = motociclista)) +
+  geom_histogram(bins = 60, color = "white") +
+  scale_discrete_onsv()
+```
+
+```{r}
+df_rename |> 
+  group_by(data) |> 
+  summarise(mortes = n(),
+            .groups = "drop") |> 
+  ggplot(aes(y = mortes, x = data)) +
+    geom_point(alpha = 0.2) +
+    geom_smooth(method = "loess")
+```
+
+```{r}
+df_rename |> 
+  group_by(data) |> 
+  summarise(mortes = n(),
+            .groups = "drop") |> 
+  filter(year(data) == 2020) |> 
+  ggplot(aes(data, mortes)) + 
+    geom_line() +
+    geom_smooth()
+
+df_rename |> 
+  group_by(data) |> 
+  summarise(mortes = n(),
+            .groups = "drop") |> 
+  filter(year(data) == 2019) |> 
+  ggplot(aes(data, mortes)) + 
+    geom_line() +
+    geom_smooth()
+
+df_rename |> 
+  group_by(data) |> 
+  summarise(mortes = n(),
+            .groups = "drop") |> 
+  filter(year(data) == 2018) |> 
+  ggplot(aes(data, mortes)) + 
+    geom_line() +
+    geom_smooth()
+
+df_rename |> 
+  group_by(data) |> 
+  summarise(mortes = n(),
+            .groups = "drop") |> 
+  filter(year(data) == 2017) |> 
+  ggplot(aes(data, mortes)) + 
+    geom_line() +
+    geom_smooth()
+```
+
+```{r}
+df_rename |> 
+  drop_na() |> 
+  group_by(estado_civil, motociclista) |> 
+  summarise(N = n()) |> 
+  ggplot(aes(x = estado_civil, y = N, fill = motociclista)) +
+    geom_bar(stat = "identity") +
+    scale_discrete_onsv()
+
+df_rename |> 
+  drop_na() |> 
+  group_by(estado_civil, sexo) |> 
+  summarise(N = n()) |> 
+  ggplot(aes(x = estado_civil, y = N, fill = sexo)) +
+    geom_bar(stat = "identity") +
+    scale_discrete_onsv()
+
+df_rename |> 
+  drop_na() |> 
+  group_by(estado_civil, cor) |> 
+  summarise(N = n()) |> 
+  ggplot(aes(x = estado_civil, y = N, fill = cor)) +
+    geom_bar(stat = "identity") +
+    scale_discrete_onsv()
+```

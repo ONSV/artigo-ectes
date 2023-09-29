@@ -36,7 +36,7 @@ decod_idade <- function(arg) {
 lista_cid <- paste0("V",seq(0,8,1), collapse = "|")
 
 # tratando os dados
-datasus <- df |> 
+sim <- df |> 
   select(-QTDFILVIVO, -HORAOBITO) |> 
   mutate(
     IDADE = decod_idade(IDADE),
@@ -58,6 +58,15 @@ datasus <- df |>
       .default = NA
     ),
     ESC = as.character(ESC),
+    ESC_DECOD = case_match(
+      ESC,
+      "1" ~ "nenhuma",
+      "2" ~ "1 a 3 anos",
+      "3" ~ "4 A 7 anos",
+      "4" ~ "8 a 11 anos",
+      "5" ~ "12 a mais",
+      .default = NA
+    ),
     ESTCIV = as.character(ESTCIV),
     ESTCIV = case_match(
       ESTCIV,
@@ -78,6 +87,13 @@ datasus <- df |>
       "4" ~ "via",
       "5" ~ "outros",
       .default = NA
+    ),
+    MOTOCICLISTA = if_else(
+      grepl("V2", CAUSABAS),
+      "sim",
+      "nao"
     )
   ) |> 
   filter(grepl(lista_cid, CAUSABAS))
+
+save(sim, file = "data/sim.rda")

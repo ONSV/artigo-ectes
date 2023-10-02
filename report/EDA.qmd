@@ -20,6 +20,7 @@ library(here)
 library(knitr)
 load(here("data","sim.rda"))
 options(scipen = 999)
+theme_set(theme_onsv())
 ```
 
 ## Limpeza e Tratamento de dados
@@ -72,34 +73,44 @@ df_rename |> head() |> kable()
 ggplot(drop_na(df_rename), aes(x = estado_civil, y = idade, color = motociclista)) +
   geom_boxplot(outlier.alpha = 0.1) +
   scale_discrete_onsv()
+```
 
+```{r}
 ggplot(drop_na(df_rename), aes(x = sexo, y = idade, color = motociclista)) +
   geom_boxplot(outlier.alpha = 0.1) +
   scale_discrete_onsv()
+```
 
+```{r}
 ggplot(drop_na(df_rename), aes(x = cor, y = idade, color = motociclista)) +
   geom_boxplot(outlier.alpha = 0.1) +
   scale_discrete_onsv()
+```
 
+```{r}
 ggplot(drop_na(df_rename), aes(x = escola_decod, y = idade, color = motociclista)) +
   geom_boxplot(outlier.alpha = 0.1) +
   scale_discrete_onsv()
+```
 
+```{r}
 ggplot(drop_na(df_rename), aes(x = local, y = idade, color = motociclista)) +
   geom_boxplot(outlier.alpha = 0.1) +
   scale_discrete_onsv()
 ```
 
+
 ### Distribuição de idades
 
 ```{r}
 ggplot(df_rename, aes(x = idade, fill = motociclista)) +
-  geom_histogram(bins = 60, color = "white") +
+  geom_histogram(binwidth = 10, color = "white") +
+  scale_x_continuous(breaks = seq(0,120,10)) +
   scale_discrete_onsv()
 ```
 
 ### Séries Temporais
-- Para a década e para os últimos quatro anos 
+- Para a década e para os últimos quatro anos, analisando se há alguma tendência temporal ou sazonalidade
 
 ```{r}
 df_rename |> 
@@ -120,7 +131,9 @@ df_rename |>
   ggplot(aes(data, mortes)) + 
     geom_line() +
     geom_smooth()
+```
 
+```{r}
 df_rename |> 
   group_by(data) |> 
   summarise(mortes = n(),
@@ -129,7 +142,9 @@ df_rename |>
   ggplot(aes(data, mortes)) + 
     geom_line() +
     geom_smooth()
+```
 
+```{r}
 df_rename |> 
   group_by(data) |> 
   summarise(mortes = n(),
@@ -138,7 +153,9 @@ df_rename |>
   ggplot(aes(data, mortes)) + 
     geom_line() +
     geom_smooth()
+```
 
+```{r}
 df_rename |> 
   group_by(data) |> 
   summarise(mortes = n(),
@@ -148,6 +165,7 @@ df_rename |>
     geom_line() +
     geom_smooth()
 ```
+
 
 ### Relações
 - Entre as variáveis e a quantidade de mortes
@@ -160,7 +178,9 @@ df_rename |>
   ggplot(aes(x = estado_civil, y = N, fill = motociclista)) +
     geom_bar(stat = "identity") +
     scale_discrete_onsv()
+```
 
+```{r}
 df_rename |> 
   drop_na() |> 
   group_by(sexo, motociclista) |> 
@@ -168,7 +188,9 @@ df_rename |>
   ggplot(aes(x = sexo, y = N, fill = motociclista)) +
     geom_bar(stat = "identity") +
     scale_discrete_onsv()
+```
 
+```{r}
 df_rename |> 
   drop_na() |> 
   group_by(cor, motociclista) |> 
@@ -176,7 +198,9 @@ df_rename |>
   ggplot(aes(x = cor, y = N, fill = motociclista)) +
     geom_bar(stat = "identity") +
     scale_discrete_onsv()
+```
 
+```{r}
 df_rename |> 
   drop_na() |> 
   group_by(escola_decod, motociclista) |> 
@@ -184,7 +208,9 @@ df_rename |>
   ggplot(aes(x = escola_decod, y = N, fill = motociclista)) +
     geom_bar(stat = "identity") +
     scale_discrete_onsv()
+```
 
+```{r}
 df_rename |> 
   drop_na() |> 
   group_by(local, motociclista) |> 
@@ -199,20 +225,23 @@ df_rename |>
 ```{r}
 sim |> 
   drop_na() |> 
-  head()
+  head() |> 
+  kable()
 ```
 
 ```{r}
 sim |> 
   filter(grepl("anos",IDADE)) |> 
-  head()
+  head() |> 
+  kable()
 ```
 
 ```{r}
 sim |> 
   filter(grepl("anos",IDADE)) |> 
   drop_na() |> 
-  head()
+  head() |> 
+  kable()
 ```
 
 ```{r}
@@ -224,7 +253,8 @@ sim |>
       "0"
     )
   ) |> 
-  head()
+  head() |> 
+  kable()
 ```
 
 ```{r}
@@ -237,7 +267,8 @@ sim |>
     ),
     IDADE = as.numeric(IDADE)
   ) |> filter(IDADE < 18 & is.na(ESTCIV)) |> 
-  head()
+  head() |> 
+  kable()
 ```
 ```{r}
 colSums(is.na(sim))
@@ -287,9 +318,19 @@ na_df |>
   pivot_longer(-1) |> 
   ggplot(aes(x = ANO, y = value, color = name)) +
     geom_point() + geom_line()
+
+cor(x = na_df$estado_civil, y = na_df$ambos)
+cor(x = na_df$escolaridade, y = na_df$ambos)
 ```
 
 - O número de NA para o estado civil é próxima do número de vezes que há NA em ambos, mostrando que nem sempre que há NA no estado civil acontece o mesmo na escolaridade, mas é comum que quando haja NA na escolaridade o mesmo aconteça no estado civil
+
+```{r}
+sim |> nrow()
+sim |> filter(is.na(ESTCIV) & is.na(ESC_DECOD)) |> nrow()
+sim |> filter(is.na(ESTCIV)) |> nrow()
+sim |> filter(is.na(ESC_DECOD)) |> nrow()
+```
 
 ```{r}
 sim |> 
@@ -302,5 +343,6 @@ sim |>
     IDADE = as.numeric(IDADE)
   ) |> drop_na() |> 
   select(IDADE, RACACOR, SEXO, ESTCIV, LOCOCOR, ESC_DECOD, MOTOCICLISTA) |> 
-  head()
+  head() |> 
+  kable()
 ```

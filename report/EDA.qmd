@@ -37,31 +37,43 @@ df <- sim |>
     idade = if_else(unidade == "anos", idade, 0),
   )
 
-df |> head() |> kable()
+df |> 
+  head() |>
+  kable()
 ```
 
 ```{r}
-df |> filter(idade == 0) |> head() |> kable()
+df |>
+  filter(idade == 0) |>
+  head() |>
+  kable()
 ```
 
 
 ```{r}
-df |> filter(idade < 10) |> head() |> kable()
+df |> 
+  filter(idade < 10) |>
+  head() |> 
+  kable()
 ```
 
 ```{r}
-df_rename <- df |> 
-  select(-unidade, -CAUSABAS) |> 
-  rename(cor = RACACOR, 
-         sexo = SEXO, 
-         escolaridade = ESC, 
-         estado_civil = ESTCIV,
-         data = DTOBITO,
-         escola_decod = ESC_DECOD,
-         local = LOCOCOR,
-         motociclista = MOTOCICLISTA)
+df_rename <- df |>
+  select(-unidade, -CAUSABAS) |>
+  rename(
+    cor = RACACOR,
+    sexo = SEXO,
+    escolaridade = ESC,
+    estado_civil = ESTCIV,
+    data = DTOBITO,
+    escola_decod = ESC_DECOD,
+    local = LOCOCOR,
+    motociclista = MOTOCICLISTA
+  )
 
-df_rename |> head() |> kable()
+df_rename |>
+  head() |>
+  kable()
 ```
 
 ## Iniciando EDA
@@ -70,7 +82,9 @@ df_rename |> head() |> kable()
 - Comparando variáveis com a idade e se a vítima era motociclista ou não
 
 ```{r}
-ggplot(drop_na(df_rename), aes(x = estado_civil, y = idade, color = motociclista)) +
+ggplot(
+  drop_na(df_rename), aes(x = estado_civil, y = idade, color = motociclista)
+) +
   geom_boxplot(outlier.alpha = 0.1) +
   scale_discrete_onsv()
 ```
@@ -88,7 +102,9 @@ ggplot(drop_na(df_rename), aes(x = cor, y = idade, color = motociclista)) +
 ```
 
 ```{r}
-ggplot(drop_na(df_rename), aes(x = escola_decod, y = idade, color = motociclista)) +
+ggplot(
+  drop_na(df_rename), aes(x = escola_decod, y = idade, color = motociclista)
+) +
   geom_boxplot(outlier.alpha = 0.1) +
   scale_discrete_onsv()
 ```
@@ -113,57 +129,67 @@ ggplot(df_rename, aes(x = idade, fill = motociclista)) +
 - Para a década e para os últimos quatro anos, analisando se há alguma tendência temporal ou sazonalidade
 
 ```{r}
-df_rename |> 
-  group_by(data) |> 
-  summarise(mortes = n(),
-            .groups = "drop") |> 
+df_rename |>
+  group_by(data) |>
+  summarise(
+    mortes = n(),
+    .groups = "drop"
+  ) |>
   ggplot(aes(y = mortes, x = data)) +
-    geom_point(alpha = 0.2) +
-    geom_smooth(method = "loess")
+  geom_point(alpha = 0.2) +
+  geom_smooth(method = "loess")
 ```
 
 ```{r}
-df_rename |> 
-  group_by(data) |> 
-  summarise(mortes = n(),
-            .groups = "drop") |> 
-  filter(year(data) == 2020) |> 
-  ggplot(aes(data, mortes)) + 
-    geom_line() +
-    geom_smooth()
+df_rename |>
+  group_by(data) |>
+  summarise(
+    mortes = n(),
+    .groups = "drop"
+  ) |>
+  filter(year(data) == 2020) |>
+  ggplot(aes(data, mortes)) +
+  geom_line() +
+  geom_smooth()
 ```
 
 ```{r}
-df_rename |> 
-  group_by(data) |> 
-  summarise(mortes = n(),
-            .groups = "drop") |> 
-  filter(year(data) == 2019) |> 
-  ggplot(aes(data, mortes)) + 
-    geom_line() +
-    geom_smooth()
+df_rename |>
+  group_by(data) |>
+  summarise(
+    mortes = n(),
+    .groups = "drop"
+  ) |>
+  filter(year(data) == 2019) |>
+  ggplot(aes(data, mortes)) +
+  geom_line() +
+  geom_smooth()
 ```
 
 ```{r}
-df_rename |> 
-  group_by(data) |> 
-  summarise(mortes = n(),
-            .groups = "drop") |> 
-  filter(year(data) == 2018) |> 
-  ggplot(aes(data, mortes)) + 
-    geom_line() +
-    geom_smooth()
+df_rename |>
+  group_by(data) |>
+  summarise(
+    mortes = n(),
+    .groups = "drop"
+  ) |>
+  filter(year(data) == 2018) |>
+  ggplot(aes(data, mortes)) +
+  geom_line() +
+  geom_smooth()
 ```
 
 ```{r}
-df_rename |> 
-  group_by(data) |> 
-  summarise(mortes = n(),
-            .groups = "drop") |> 
-  filter(year(data) == 2017) |> 
-  ggplot(aes(data, mortes)) + 
-    geom_line() +
-    geom_smooth()
+df_rename |>
+  group_by(data) |>
+  summarise(
+    mortes = n(),
+    .groups = "drop"
+  ) |>
+  filter(year(data) == 2017) |>
+  ggplot(aes(data, mortes)) +
+  geom_line() +
+  geom_smooth()
 ```
 
 
@@ -171,53 +197,53 @@ df_rename |>
 - Entre as variáveis e a quantidade de mortes
 
 ```{r}
-df_rename |> 
-  drop_na() |> 
-  group_by(estado_civil, motociclista) |> 
-  summarise(N = n()) |> 
+df_rename |>
+  drop_na() |>
+  group_by(estado_civil, motociclista) |>
+  summarise(N = n()) |>
   ggplot(aes(x = estado_civil, y = N, fill = motociclista)) +
-    geom_bar(stat = "identity") +
-    scale_discrete_onsv()
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_discrete_onsv()
 ```
 
 ```{r}
-df_rename |> 
-  drop_na() |> 
-  group_by(sexo, motociclista) |> 
-  summarise(N = n()) |> 
+df_rename |>
+  drop_na() |>
+  group_by(sexo, motociclista) |>
+  summarise(N = n()) |>
   ggplot(aes(x = sexo, y = N, fill = motociclista)) +
-    geom_bar(stat = "identity") +
-    scale_discrete_onsv()
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_discrete_onsv()
 ```
 
 ```{r}
-df_rename |> 
-  drop_na() |> 
-  group_by(cor, motociclista) |> 
-  summarise(N = n()) |> 
+df_rename |>
+  drop_na() |>
+  group_by(cor, motociclista) |>
+  summarise(N = n()) |>
   ggplot(aes(x = cor, y = N, fill = motociclista)) +
-    geom_bar(stat = "identity") +
-    scale_discrete_onsv()
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_discrete_onsv()
 ```
 
 ```{r}
-df_rename |> 
-  drop_na() |> 
-  group_by(escola_decod, motociclista) |> 
-  summarise(N = n()) |> 
+df_rename |>
+  drop_na() |>
+  group_by(escola_decod, motociclista) |>
+  summarise(N = n()) |>
   ggplot(aes(x = escola_decod, y = N, fill = motociclista)) +
-    geom_bar(stat = "identity") +
-    scale_discrete_onsv()
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_discrete_onsv()
 ```
 
 ```{r}
-df_rename |> 
-  drop_na() |> 
-  group_by(local, motociclista) |> 
-  summarise(N = n()) |> 
+df_rename |>
+  drop_na() |>
+  group_by(local, motociclista) |>
+  summarise(N = n()) |>
   ggplot(aes(x = local, y = N, fill = motociclista)) +
-    geom_bar(stat = "identity") +
-    scale_discrete_onsv()
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_discrete_onsv()
 ```
 
 ## Tratamento dos dados para modelagem
@@ -275,49 +301,59 @@ colSums(is.na(sim))
 ```
 
 ```{r}
-na_estado_civil <- sim |> 
-  filter(is.na(ESTCIV)) |> 
-  mutate(ANO = year(DTOBITO)) |> 
+na_estado_civil <- sim |>
+  filter(is.na(ESTCIV)) |>
+  mutate(ANO = year(DTOBITO)) |>
   count(ANO)
 
-na_escolaridade <- sim |> 
-  filter(is.na(ESC_DECOD)) |> 
-  mutate(ANO = year(DTOBITO)) |> 
+na_escolaridade <- sim |>
+  filter(is.na(ESC_DECOD)) |>
+  mutate(ANO = year(DTOBITO)) |>
   count(ANO)
 
-na_ambos <- sim |> 
-  filter(is.na(ESTCIV) & is.na(ESC_DECOD)) |> 
-  mutate(ANO = year(DTOBITO)) |> 
+na_ambos <- sim |>
+  filter(is.na(ESTCIV) & is.na(ESC_DECOD)) |>
+  mutate(ANO = year(DTOBITO)) |>
   count(ANO)
 
-na_total <- sim |> 
-  mutate(ANO = year(DTOBITO)) |> 
+na_total <- sim |>
+  mutate(ANO = year(DTOBITO)) |>
   count(ANO)
 
-na_df <- reduce(list(na_estado_civil, 
-                     na_escolaridade,
-                     na_ambos,
-                     na_total),
-                left_join,
-                by = "ANO") |> 
-  rename(estado_civil = n.x, 
-         escolaridade = n.y,
-         ambos = n.x.x,
-         total = n.y.y)
+na_df <- reduce(
+  list(
+    na_estado_civil,
+    na_escolaridade,
+    na_ambos,
+    na_total
+  ),
+  left_join,
+  by = "ANO"
+) |>
+  rename(
+    estado_civil = n.x,
+    escolaridade = n.y,
+    ambos = n.x.x,
+    total = n.y.y
+  )
 
-na_df |> 
-  pivot_longer(-1) |> 
+na_df |>
+  pivot_longer(-1) |>
   ggplot(aes(x = ANO, y = value, color = name)) +
-    geom_point() + geom_line()
+  geom_point() +
+  geom_line()
 
-na_df |> 
-  mutate(taxa_estado_civil = estado_civil/total,
-         taxa_escolaridade = escolaridade/total,
-         taxa_ambos = ambos/total) |> 
-  select(ANO, taxa_estado_civil, taxa_escolaridade, taxa_ambos) |> 
-  pivot_longer(-1) |> 
+na_df |>
+  mutate(
+    taxa_estado_civil = estado_civil / total,
+    taxa_escolaridade = escolaridade / total,
+    taxa_ambos = ambos / total
+  ) |>
+  select(ANO, taxa_estado_civil, taxa_escolaridade, taxa_ambos) |>
+  pivot_longer(-1) |>
   ggplot(aes(x = ANO, y = value, color = name)) +
-    geom_point() + geom_line()
+  geom_point() +
+  geom_line()
 
 cor(x = na_df$estado_civil, y = na_df$ambos)
 cor(x = na_df$escolaridade, y = na_df$ambos)
@@ -327,9 +363,18 @@ cor(x = na_df$escolaridade, y = na_df$ambos)
 
 ```{r}
 sim |> nrow()
-sim |> filter(is.na(ESTCIV) & is.na(ESC_DECOD)) |> nrow()
-sim |> filter(is.na(ESTCIV)) |> nrow()
-sim |> filter(is.na(ESC_DECOD)) |> nrow()
+
+sim |>
+  filter(is.na(ESTCIV) & is.na(ESC_DECOD)) |>
+  nrow()
+
+sim |>
+  filter(is.na(ESTCIV)) |>
+  nrow()
+  
+sim |>
+  filter(is.na(ESC_DECOD)) |>
+  nrow()
 ```
 
 ```{r}

@@ -19,6 +19,7 @@ library(onsvplot)
 library(here)
 library(knitr)
 load(here("data","sim.rda"))
+options(scipen = 999)
 ```
 
 ## Limpeza e Tratamento de dados
@@ -64,17 +65,41 @@ df_rename |> head() |> kable()
 
 ## Iniciando EDA
 
+### Boxplots
+- Comparando variáveis com a idade e se a vítima era motociclista ou não
+
 ```{r}
-ggplot(drop_na(df_rename), aes(x = estado_civil, y = idade, color = estado_civil)) +
+ggplot(drop_na(df_rename), aes(x = estado_civil, y = idade, color = motociclista)) +
+  geom_boxplot(outlier.alpha = 0.1) +
+  scale_discrete_onsv()
+
+ggplot(drop_na(df_rename), aes(x = sexo, y = idade, color = motociclista)) +
+  geom_boxplot(outlier.alpha = 0.1) +
+  scale_discrete_onsv()
+
+ggplot(drop_na(df_rename), aes(x = cor, y = idade, color = motociclista)) +
+  geom_boxplot(outlier.alpha = 0.1) +
+  scale_discrete_onsv()
+
+ggplot(drop_na(df_rename), aes(x = escola_decod, y = idade, color = motociclista)) +
+  geom_boxplot(outlier.alpha = 0.1) +
+  scale_discrete_onsv()
+
+ggplot(drop_na(df_rename), aes(x = local, y = idade, color = motociclista)) +
   geom_boxplot(outlier.alpha = 0.1) +
   scale_discrete_onsv()
 ```
+
+### Distribuição de idades
 
 ```{r}
 ggplot(df_rename, aes(x = idade, fill = motociclista)) +
   geom_histogram(bins = 60, color = "white") +
   scale_discrete_onsv()
 ```
+
+### Séries Temporais
+- Para a década e para os últimos quatro anos 
 
 ```{r}
 df_rename |> 
@@ -124,6 +149,9 @@ df_rename |>
     geom_smooth()
 ```
 
+### Relações
+- Entre as variáveis e a quantidade de mortes
+
 ```{r}
 df_rename |> 
   drop_na() |> 
@@ -135,17 +163,144 @@ df_rename |>
 
 df_rename |> 
   drop_na() |> 
-  group_by(estado_civil, sexo) |> 
+  group_by(sexo, motociclista) |> 
   summarise(N = n()) |> 
-  ggplot(aes(x = estado_civil, y = N, fill = sexo)) +
+  ggplot(aes(x = sexo, y = N, fill = motociclista)) +
     geom_bar(stat = "identity") +
     scale_discrete_onsv()
 
 df_rename |> 
   drop_na() |> 
-  group_by(estado_civil, cor) |> 
+  group_by(cor, motociclista) |> 
   summarise(N = n()) |> 
-  ggplot(aes(x = estado_civil, y = N, fill = cor)) +
+  ggplot(aes(x = cor, y = N, fill = motociclista)) +
     geom_bar(stat = "identity") +
     scale_discrete_onsv()
+
+df_rename |> 
+  drop_na() |> 
+  group_by(escola_decod, motociclista) |> 
+  summarise(N = n()) |> 
+  ggplot(aes(x = escola_decod, y = N, fill = motociclista)) +
+    geom_bar(stat = "identity") +
+    scale_discrete_onsv()
+
+df_rename |> 
+  drop_na() |> 
+  group_by(local, motociclista) |> 
+  summarise(N = n()) |> 
+  ggplot(aes(x = local, y = N, fill = motociclista)) +
+    geom_bar(stat = "identity") +
+    scale_discrete_onsv()
+```
+
+## Tratamento dos dados para modelagem
+
+```{r}
+sim |> 
+  drop_na() |> 
+  head()
+```
+
+```{r}
+sim |> 
+  filter(grepl("anos",IDADE)) |> 
+  head()
+```
+
+```{r}
+sim |> 
+  filter(grepl("anos",IDADE)) |> 
+  drop_na() |> 
+  head()
+```
+
+```{r}
+sim |> 
+  mutate(
+    IDADE = if_else(
+      grepl("anos", IDADE),
+      str_sub(IDADE,1,3),
+      "0"
+    )
+  ) |> 
+  head()
+```
+
+```{r}
+sim |> 
+  mutate(
+    IDADE = if_else(
+      grepl("anos", IDADE),
+      str_sub(IDADE,1,3),
+      "0"
+    ),
+    IDADE = as.numeric(IDADE)
+  ) |> filter(IDADE < 18 & is.na(ESTCIV)) |> 
+  head()
+```
+```{r}
+colSums(is.na(sim))
+```
+
+```{r}
+na_estado_civil <- sim |> 
+  filter(is.na(ESTCIV)) |> 
+  mutate(ANO = year(DTOBITO)) |> 
+  count(ANO)
+
+na_escolaridade <- sim |> 
+  filter(is.na(ESC_DECOD)) |> 
+  mutate(ANO = year(DTOBITO)) |> 
+  count(ANO)
+
+na_ambos <- sim |> 
+  filter(is.na(ESTCIV) & is.na(ESC_DECOD)) |> 
+  mutate(ANO = year(DTOBITO)) |> 
+  count(ANO)
+
+na_total <- sim |> 
+  mutate(ANO = year(DTOBITO)) |> 
+  count(ANO)
+
+na_df <- reduce(list(na_estado_civil, 
+                     na_escolaridade,
+                     na_ambos,
+                     na_total),
+                left_join,
+                by = "ANO") |> 
+  rename(estado_civil = n.x, 
+         escolaridade = n.y,
+         ambos = n.x.x,
+         total = n.y.y)
+
+na_df |> 
+  pivot_longer(-1) |> 
+  ggplot(aes(x = ANO, y = value, color = name)) +
+    geom_point() + geom_line()
+
+na_df |> 
+  mutate(taxa_estado_civil = estado_civil/total,
+         taxa_escolaridade = escolaridade/total,
+         taxa_ambos = ambos/total) |> 
+  select(ANO, taxa_estado_civil, taxa_escolaridade, taxa_ambos) |> 
+  pivot_longer(-1) |> 
+  ggplot(aes(x = ANO, y = value, color = name)) +
+    geom_point() + geom_line()
+```
+
+- O número de NA para o estado civil é próxima do número de vezes que há NA em ambos, mostrando que nem sempre que há NA no estado civil acontece o mesmo na escolaridade, mas é comum que quando haja NA na escolaridade o mesmo aconteça no estado civil
+
+```{r}
+sim |> 
+  mutate(
+    IDADE = if_else(
+      grepl("anos", IDADE),
+      str_sub(IDADE,1,3),
+      "0"
+    ),
+    IDADE = as.numeric(IDADE)
+  ) |> drop_na() |> 
+  select(IDADE, RACACOR, SEXO, ESTCIV, LOCOCOR, ESC_DECOD, MOTOCICLISTA) |> 
+  head()
 ```

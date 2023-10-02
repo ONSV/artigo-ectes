@@ -62,7 +62,7 @@ sim <- df |>
       ESC,
       "1" ~ "nenhuma",
       "2" ~ "1 a 3 anos",
-      "3" ~ "4 A 7 anos",
+      "3" ~ "4 a 7 anos",
       "4" ~ "8 a 11 anos",
       "5" ~ "12 a mais",
       .default = NA

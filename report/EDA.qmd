@@ -5,10 +5,13 @@ format:
   html: 
     toc: true
     toc-depth: 2
+    theme: style.scss
+    
+title-block-banner: true
 ---
 
-- Os dados foram coletados e tratados em `data-raw/` e armazenados em `data/`.
-- Podem ser importados e analisados para prever ser um modelo classificador pode ser utilizado.
+-   Os dados foram coletados e tratados em `data-raw/` e armazenados em `data/`.
+-   Podem ser importados e analisados para prever ser um modelo classificador pode ser utilizado.
 
 ## Importação
 
@@ -26,7 +29,7 @@ theme_set(theme_onsv())
 ## Limpeza e Tratamento de dados
 
 ```{r}
-df <- sim |> 
+sim_teste <- sim |> 
   separate(
     IDADE,
     into = c("idade","unidade"),
@@ -37,28 +40,27 @@ df <- sim |>
     idade = if_else(unidade == "anos", idade, 0),
   )
 
-df |> 
+sim_teste |> 
   head() |>
   kable()
 ```
 
 ```{r}
-df |>
+sim_teste |>
   filter(idade == 0) |>
   head() |>
   kable()
 ```
 
-
 ```{r}
-df |> 
+sim_teste |> 
   filter(idade < 10) |>
   head() |> 
   kable()
 ```
 
 ```{r}
-df_rename <- df |>
+sim_plotting <- sim_teste |>
   select(-unidade, -CAUSABAS) |>
   rename(
     cor = RACACOR,
@@ -71,7 +73,7 @@ df_rename <- df |>
     motociclista = MOTOCICLISTA
   )
 
-df_rename |>
+sim_plotting |>
   head() |>
   kable()
 ```
@@ -79,57 +81,58 @@ df_rename |>
 ## Iniciando EDA
 
 ### Boxplots
-- Comparando variáveis com a idade e se a vítima era motociclista ou não
+
+-   Comparando variáveis com a idade e se a vítima era motociclista ou não
 
 ```{r}
 ggplot(
-  drop_na(df_rename), aes(x = estado_civil, y = idade, color = motociclista)
+  drop_na(sim_plotting), aes(x = estado_civil, y = idade, color = motociclista)
 ) +
   geom_boxplot(outlier.alpha = 0.1) +
   scale_discrete_onsv()
 ```
 
 ```{r}
-ggplot(drop_na(df_rename), aes(x = sexo, y = idade, color = motociclista)) +
+ggplot(drop_na(sim_plotting), aes(x = sexo, y = idade, color = motociclista)) +
   geom_boxplot(outlier.alpha = 0.1) +
   scale_discrete_onsv()
 ```
 
 ```{r}
-ggplot(drop_na(df_rename), aes(x = cor, y = idade, color = motociclista)) +
+ggplot(drop_na(sim_plotting), aes(x = cor, y = idade, color = motociclista)) +
   geom_boxplot(outlier.alpha = 0.1) +
   scale_discrete_onsv()
 ```
 
 ```{r}
 ggplot(
-  drop_na(df_rename), aes(x = escola_decod, y = idade, color = motociclista)
+  drop_na(sim_plotting), aes(x = escola_decod, y = idade, color = motociclista)
 ) +
   geom_boxplot(outlier.alpha = 0.1) +
   scale_discrete_onsv()
 ```
 
 ```{r}
-ggplot(drop_na(df_rename), aes(x = local, y = idade, color = motociclista)) +
+ggplot(drop_na(sim_plotting), aes(x = local, y = idade, color = motociclista)) +
   geom_boxplot(outlier.alpha = 0.1) +
   scale_discrete_onsv()
 ```
-
 
 ### Distribuição de idades
 
 ```{r}
-ggplot(df_rename, aes(x = idade, fill = motociclista)) +
+ggplot(sim_plotting, aes(x = idade, fill = motociclista)) +
   geom_histogram(binwidth = 10, color = "white") +
   scale_x_continuous(breaks = seq(0,120,10)) +
   scale_discrete_onsv()
 ```
 
 ### Séries Temporais
-- Para a década e para os últimos quatro anos, analisando se há alguma tendência temporal ou sazonalidade
+
+-   Para a década e para os últimos quatro anos, analisando se há alguma tendência temporal ou sazonalidade
 
 ```{r}
-df_rename |>
+sim_plotting |>
   group_by(data) |>
   summarise(
     mortes = n(),
@@ -141,7 +144,7 @@ df_rename |>
 ```
 
 ```{r}
-df_rename |>
+sim_plotting |>
   group_by(data) |>
   summarise(
     mortes = n(),
@@ -154,7 +157,7 @@ df_rename |>
 ```
 
 ```{r}
-df_rename |>
+sim_plotting |>
   group_by(data) |>
   summarise(
     mortes = n(),
@@ -167,7 +170,7 @@ df_rename |>
 ```
 
 ```{r}
-df_rename |>
+sim_plotting |>
   group_by(data) |>
   summarise(
     mortes = n(),
@@ -180,7 +183,7 @@ df_rename |>
 ```
 
 ```{r}
-df_rename |>
+sim_plotting |>
   group_by(data) |>
   summarise(
     mortes = n(),
@@ -192,12 +195,78 @@ df_rename |>
   geom_smooth()
 ```
 
-
 ### Relações
-- Entre as variáveis e a quantidade de mortes
+
+-   Entre as variáveis e a quantidade de mortes
 
 ```{r}
-df_rename |>
+sim_plotting |> 
+  drop_na() |> 
+  group_by(motociclista, estado_civil) |> 
+  summarise(N = n()) |> 
+  mutate(percentual = N/sum(N)) |> 
+  ggplot(aes(x = motociclista, y = percentual, fill = estado_civil)) +
+    geom_col(position = "dodge") +
+    scale_discrete_onsv() +
+    scale_y_continuous(labels = scales::percent_format())
+```
+
+```{r}
+sim_plotting |> 
+  drop_na() |> 
+  group_by(motociclista, sexo) |> 
+  summarise(N = n()) |> 
+  mutate(percentual = N/sum(N)) |> 
+  ggplot(aes(x = motociclista, y = percentual, fill = sexo)) +
+    geom_col(position = "dodge") +
+    scale_discrete_onsv() +
+    scale_y_continuous(labels = scales::percent_format())
+```
+
+```{r}
+sim_plotting |> 
+  drop_na() |> 
+  group_by(motociclista, cor) |> 
+  summarise(N = n()) |> 
+  mutate(percentual = N/sum(N)) |> 
+  ggplot(aes(x = motociclista, y = percentual, fill = cor)) +
+    geom_col(position = "dodge") +
+    scale_discrete_onsv() +
+    scale_y_continuous(labels = scales::percent_format())
+```
+
+```{r}
+sim_plotting |> 
+  mutate(
+    escola_decod = factor(
+      escola_decod,
+      levels = c("nenhuma","1 a 3 anos","4 a 7 anos","8 a 11 anos","12 a mais")
+    )
+  ) |> 
+  drop_na() |> 
+  group_by(motociclista, escola_decod) |> 
+  summarise(N = n()) |> 
+  mutate(percentual = N/sum(N)) |> 
+  ggplot(aes(x = motociclista, y = percentual, fill = escola_decod)) +
+    geom_col(position = "dodge") +
+    scale_discrete_onsv() +
+    scale_y_continuous(labels = scales::percent_format())
+```
+
+```{r}
+sim_plotting |> 
+  drop_na() |> 
+  group_by(motociclista, local) |> 
+  summarise(N = n()) |> 
+  mutate(percentual = N/sum(N)) |> 
+  ggplot(aes(x = motociclista, y = percentual, fill = local)) +
+    geom_col(position = "dodge") +
+    scale_discrete_onsv() +
+    scale_y_continuous(labels = scales::percent_format())
+```
+
+```{r}
+sim_plotting |>
   drop_na() |>
   group_by(estado_civil, motociclista) |>
   summarise(N = n()) |>
@@ -207,7 +276,7 @@ df_rename |>
 ```
 
 ```{r}
-df_rename |>
+sim_plotting |>
   drop_na() |>
   group_by(sexo, motociclista) |>
   summarise(N = n()) |>
@@ -217,7 +286,7 @@ df_rename |>
 ```
 
 ```{r}
-df_rename |>
+sim_plotting |>
   drop_na() |>
   group_by(cor, motociclista) |>
   summarise(N = n()) |>
@@ -227,7 +296,13 @@ df_rename |>
 ```
 
 ```{r}
-df_rename |>
+sim_plotting |>
+  mutate(
+    escola_decod = factor(
+      escola_decod,
+      levels = c("nenhuma","1 a 3 anos","4 a 7 anos","8 a 11 anos","12 a mais")
+    )
+  ) |> 
   drop_na() |>
   group_by(escola_decod, motociclista) |>
   summarise(N = n()) |>
@@ -237,7 +312,7 @@ df_rename |>
 ```
 
 ```{r}
-df_rename |>
+sim_plotting |>
   drop_na() |>
   group_by(local, motociclista) |>
   summarise(N = n()) |>
@@ -296,6 +371,7 @@ sim |>
   head() |> 
   kable()
 ```
+
 ```{r}
 colSums(is.na(sim))
 ```
@@ -359,7 +435,7 @@ cor(x = na_df$estado_civil, y = na_df$ambos)
 cor(x = na_df$escolaridade, y = na_df$ambos)
 ```
 
-- O número de NA para o estado civil é próxima do número de vezes que há NA em ambos, mostrando que nem sempre que há NA no estado civil acontece o mesmo na escolaridade, mas é comum que quando haja NA na escolaridade o mesmo aconteça no estado civil
+-   O número de NA para o estado civil é próximo do número de vezes que há NA em ambos, mostrando que nem sempre que há NA no estado civil acontece o mesmo na escolaridade, mas é comum que quando haja NA na escolaridade o mesmo aconteça no estado civil
 
 ```{r}
 sim |> nrow()

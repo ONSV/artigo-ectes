@@ -99,6 +99,11 @@ log_fit <-
   log_wflow |> 
   fit(train_split)
 
+log_fit |> tidy()
+```
+
+
+```{r}
 sim_pred <- 
   log_fit |> 
   predict(test_split) |> 

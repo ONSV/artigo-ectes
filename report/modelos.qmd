@@ -45,17 +45,21 @@ sim_ajustado <- sim |>
          estado_civil = ESTCIV,
          local_obito = LOCOCOR,
          escolaridade = ESC_DECOD,
-         motociclista = MOTOCICLISTA)
+         motociclista = MOTOCICLISTA) |> 
+  mutate(across(c(cor, sexo, estado_civil, local_obito, motociclista), 
+                as_factor))
 
-sim_ajustado
+sim_ajustado |> head() |> kable()
 ```
 
-## Separando treino e teste
+## Modelo Train-Test LogReg
+
+### Separando treino e teste
 
 ```{r}
 set.seed(123)
 
-data_split <- initial_split(sim_ajustado, prop = 0.7)
+data_split <- initial_split(sim_ajustado, prop = 0.8)
 
 train_split <- training(data_split)
 test_split <- testing(data_split)
@@ -66,16 +70,18 @@ nrow(test_split)
 
 ```{r}
 train_split |> 
-  filter(motociclista == "nao")
+  filter(motociclista == "nao") |> 
+  dim()
 
 train_split |> 
-  filter(motociclista == "sim")
+  filter(motociclista == "sim") |> 
+  dim()
 ```
 
-## Pré-processamento
+### Pré-processamento
 
 ```{r}
-metrix <- metric_set(accuracy, kap)
+metrix <- metric_set(accuracy, precision, kap)
 
 log_model <- 
   logistic_reg(mixture = 1) |> 
@@ -86,7 +92,9 @@ prep_steps <-
   step_dummy(all_nominal_predictors()) |> 
   step_normalize(all_numeric_predictors())
 
-prep_steps |> summary()
+prep_steps |> summary() |> kable()
+
+prep_steps |> prep() |> juice() |> head() |> kable()
 ```
 
 ```{r}
@@ -99,7 +107,7 @@ log_fit <-
   log_wflow |> 
   fit(train_split)
 
-log_fit |> tidy()
+log_fit |> tidy() |> kable()
 ```
 
 
@@ -107,12 +115,24 @@ log_fit |> tidy()
 sim_pred <- 
   log_fit |> 
   predict(test_split) |> 
-  bind_cols(test_split) |> 
-  mutate(motociclista = as.factor(motociclista))
+  bind_cols(test_split)
 
-sim_pred
+sim_pred |> head() |> kable()
 ```
 
+### Métricas
+
 ```{r}
-metrix(data = sim_pred, estimate = .pred_class, truth = motociclista)
+metrix(data = sim_pred, estimate = .pred_class, truth = motociclista) |> kable()
+conf_mat(sim_pred, truth = motociclista, estimate = .pred_class)
+```
+
+## Modelo Cross LogReg
+
+```{r}
+data_folds <- vfold_cv(sim_ajustado)
+
+log_10fold <- fit_resamples(object = log_wflow, resamples = data_folds)
+
+log_10fold |> collect_metrics(summarize = FALSE) |> kable()
 ```

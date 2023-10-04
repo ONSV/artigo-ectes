@@ -21,8 +21,6 @@ load(here("data","sim.rda"))
 options(scipen = 999)
 ```
 
-## Tratando os dados para melhor pré-processamento
-
 ```{r}
 sim_ajustado <- sim |> 
   mutate(
@@ -52,10 +50,6 @@ sim_ajustado <- sim |>
 sim_ajustado |> head() |> kable()
 ```
 
-## Modelo Train-Test LogReg
-
-### Separando treino e teste
-
 ```{r}
 set.seed(123)
 
@@ -69,73 +63,54 @@ nrow(test_split)
 ```
 
 ```{r}
-train_split |> 
-  filter(motociclista == "nao") |> 
-  dim()
-
-train_split |> 
-  filter(motociclista == "sim") |> 
-  dim()
-```
-
-### Pré-processamento
-
-```{r}
-metrix <- metric_set(accuracy, precision, kap)
-
-log_model <- 
-  logistic_reg(mixture = 1) |> 
-  set_engine("glm")
-
 prep_steps <- 
   recipe(motociclista ~ ., train_split) |>
   step_dummy(all_nominal_predictors()) |> 
   step_normalize(all_numeric_predictors())
 
-prep_steps |> summary() |> kable()
+metrix <- metric_set(accuracy, precision, kap)
 
-prep_steps |> prep() |> juice() |> head() |> kable()
+prep_steps
 ```
 
-### Ajuste do modelo
-
 ```{r}
-log_wflow <- 
-  workflow() |> 
-  add_recipe(prep_steps) |> 
-  add_model(log_model)
+library(ranger)
 
-log_fit <-
-  log_wflow |> 
+rf_model <- 
+  rand_forest(trees = 100) |> 
+  set_mode("classification") |> 
+  set_engine("ranger")
+
+rf_wflow <-
+  workflow() |>
+  add_recipe(prep_steps) |> 
+  add_model(rf_model)
+
+rf_fit <- 
+  rf_wflow |> 
   fit(train_split)
 
-log_fit |> tidy() |> kable()
+rf_fit
 ```
 
-### Predição
-
 ```{r}
-sim_pred <- 
-  log_fit |> 
-  predict(test_split) |> 
-  bind_cols(test_split)
+small_sample <- slice_sample(sim_ajustado, prop = 0.1)
 
-sim_pred |> head() |> kable()
-```
+library(ranger)
 
-### Métricas
+rf_model2 <- 
+  rand_forest(trees = 1000) |> 
+  set_mode("classification") |> 
+  set_engine("ranger")
 
-```{r}
-metrix(data = sim_pred, estimate = .pred_class, truth = motociclista) |> kable()
-conf_mat(sim_pred, truth = motociclista, estimate = .pred_class)
-```
+rf_wflow2 <-
+  workflow() |>
+  add_recipe(prep_steps) |> 
+  add_model(rf_model2)
 
-## Modelo Cross LogReg
+rf_fit2 <- 
+  rf_wflow2 |> 
+  fit(small_sample)
 
-```{r}
-data_folds <- vfold_cv(sim_ajustado)
-
-log_10fold <- fit_resamples(object = log_wflow, resamples = data_folds)
-
-log_10fold |> collect_metrics(summarize = FALSE) |> kable()
+rf_fit2
 ```

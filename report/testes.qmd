@@ -13,8 +13,6 @@ title-block-banner: true
 ```{r}
 library(tidyverse)
 library(tidymodels)
-library(ggplot2)
-library(onsvplot)
 library(here)
 library(knitr)
 load(here("data","sim.rda"))
@@ -22,7 +20,7 @@ options(scipen = 999)
 ```
 
 ```{r}
-sim_ajustado <- sim |> 
+sim_tratado <- sim |> 
   mutate(
     IDADE = if_else(
       grepl("anos", IDADE),
@@ -47,13 +45,13 @@ sim_ajustado <- sim |>
   mutate(across(c(cor, sexo, estado_civil, local_obito, motociclista), 
                 as_factor))
 
-sim_ajustado |> head() |> kable()
+sim_tratado |> head() |> kable()
 ```
 
 ```{r}
 set.seed(123)
 
-data_split <- initial_split(sim_ajustado, prop = 0.8)
+data_split <- initial_split(sim_tratado, prop = 0.8)
 
 train_split <- training(data_split)
 test_split <- testing(data_split)
@@ -68,49 +66,92 @@ prep_steps <-
   step_dummy(all_nominal_predictors()) |> 
   step_normalize(all_numeric_predictors())
 
-metrix <- metric_set(accuracy, precision, kap)
-
 prep_steps
 ```
 
-```{r}
-library(ranger)
 
+```{r}
+metrix <- metric_set(accuracy, precision, roc_auc)
+```
+
+```{r}
 rf_model <- 
-  rand_forest(trees = 100) |> 
+  rand_forest(trees = 50) |> 
   set_mode("classification") |> 
   set_engine("ranger")
 
+rf_model
+```
+
+```{r}
 rf_wflow <-
-  workflow() |>
+  workflow() |> 
   add_recipe(prep_steps) |> 
   add_model(rf_model)
 
-rf_fit <- 
-  rf_wflow |> 
-  fit(train_split)
-
-rf_fit
+rf_wflow
 ```
 
 ```{r}
-small_sample <- slice_sample(sim_ajustado, prop = 0.1)
+data_folds <- vfold_cv(train_split)
 
-library(ranger)
+rf_10fold <- fit_resamples(object = rf_wflow, metrics = metrix, resamples = data_folds)
 
-rf_model2 <- 
-  rand_forest(trees = 1000) |> 
-  set_mode("classification") |> 
-  set_engine("ranger")
-
-rf_wflow2 <-
-  workflow() |>
-  add_recipe(prep_steps) |> 
-  add_model(rf_model2)
-
-rf_fit2 <- 
-  rf_wflow2 |> 
-  fit(small_sample)
-
-rf_fit2
+rf_10fold |> collect_metrics(summarize = FALSE)
 ```
+
+```{r}
+best_rf_10fold <- collect_metrics(x = rf_10fold, summarize = FALSE)
+
+best_rf_10fold
+
+best_rf_10fold |>  
+  filter(.metric == "accuracy") |> 
+  filter(.estimate == max(.estimate))
+
+best_rf_10fold |>  
+  filter(.metric == "precision") |> 
+  filter(.estimate == max(.estimate))
+
+best_rf_10fold |>  
+  filter(.metric == "roc_auc") |> 
+  filter(.estimate == max(.estimate))
+```
+
+```{r}
+rf_fold2_data <- analysis(data_folds$splits[[2]])
+rf_fold7_data <- analysis(data_folds$splits[[7]])
+rf_fold8_data <- analysis(data_folds$splits[[8]])
+```
+
+```{r}
+rf_fold2_fit <- 
+  rf_wflow |> 
+  fit(rf_fold2_data)
+
+rf_fold7_fit <- 
+  rf_wflow |> 
+  fit(rf_fold7_data)
+
+rf_fold8_fit <- 
+  rf_wflow |> 
+  fit(rf_fold8_data)
+```
+
+```{r}
+rf_pred <- bind_cols(
+  test_split,
+  rename(predict(rf_fold2_fit, test_split), pred_fold2 = .pred_class),
+  rename(predict(rf_fold7_fit, test_split), pred_fold7 = .pred_class),
+  rename(predict(rf_fold8_fit, test_split), pred_fold8 = .pred_class)
+)
+
+rf_pred 
+```
+
+```{r}
+accuracy(rf_pred, truth = motociclista, estimate = pred_fold2)
+accuracy(rf_pred, truth = motociclista, estimate = pred_fold7)
+accuracy(rf_pred, truth = motociclista, estimate = pred_fold8)
+```
+

@@ -63,7 +63,7 @@ nrow(test_split)
 ```
 
 ```{r}
-metrix <- metric_set(accuracy, precision, kap)
+metrix <- metric_set(accuracy, precision, sens, roc_auc)
 
 log_model <- 
   logistic_reg(mixture = 1) |> 
@@ -71,10 +71,64 @@ log_model <-
 
 prep_steps <- 
   recipe(motociclista ~ ., train_split) |>
-  step_dummy(all_nominal_predictors()) |> 
-  step_normalize(all_numeric_predictors())
+  step_dummy(all_nominal_predictors()) 
 
 prep_steps |> summary() |> kable()
 
 prep_steps |> prep() |> juice() |> head() |> kable()
+```
+
+```{r}
+data_folds <- vfold_cv(data = train_split)
+```
+
+```{r}
+log_wflow <- 
+  workflow() |> 
+  add_recipe(prep_steps) |> 
+  add_model(log_model)
+
+log_wflow
+```
+
+```{r}
+log_cvfit <- fit_resamples(object = log_wflow, resamples = data_folds, metrics = metrix)
+```
+
+```{r}
+log_cvfit |> 
+  collect_metrics(summarize = FALSE) |> 
+  pivot_wider(names_from = .metric, values_from = .estimate) |> 
+  select(-.estimator, -.config) |> 
+  mutate(mean = (accuracy + precision + sens + roc_auc)/4) |> 
+  filter(mean == max(mean)) |> 
+  kable()
+```
+
+```{r}
+best_fold <- analysis(log_cvfit$splits[[7]])
+
+best_fold |> head() |> kable()
+```
+
+```{r}
+log_fit <-
+  log_wflow |> 
+  fit(best_fold)
+
+log_fit |> tidy() |> kable()
+```
+
+```{r}
+log_preds <- log_fit |> 
+  predict(test_split) |> 
+  bind_cols(test_split)
+
+log_preds
+```
+
+```{r}
+metricas <- metric_set(accuracy, precision, sens)
+
+metricas(log_preds, truth = motociclista, estimate = .pred_class)
 ```

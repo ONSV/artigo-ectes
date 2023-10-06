@@ -1,0 +1,80 @@
+---
+title: Modelo de Regressão Logística
+
+format: 
+  html: 
+    toc: true
+    toc-depth: 2
+    theme: style.scss  
+        
+title-block-banner: true
+---
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(ggplot2)
+library(onsvplot)
+library(here)
+library(knitr)
+load(here("data","sim.rda"))
+options(scipen = 999)
+```
+
+```{r}
+sim_ajustado <- sim |> 
+  mutate(
+    IDADE = if_else(
+      grepl("anos", IDADE),
+      str_sub(IDADE,1,3),
+      "0"
+    ),
+    IDADE = as.numeric(IDADE),
+    ESC_DECOD = factor(
+      ESC_DECOD,
+      levels = c("nenhuma","1 a 3 anos","4 a 7 anos","8 a 11 anos","12 a mais")
+    )
+  ) |> 
+  drop_na() |> 
+  select(IDADE, RACACOR, SEXO, ESTCIV, LOCOCOR, ESC_DECOD, MOTOCICLISTA) |> 
+  rename(idade = IDADE,
+         cor = RACACOR,
+         sexo = SEXO,
+         estado_civil = ESTCIV,
+         local_obito = LOCOCOR,
+         escolaridade = ESC_DECOD,
+         motociclista = MOTOCICLISTA) |> 
+  mutate(across(c(cor, sexo, estado_civil, local_obito, motociclista), 
+                as_factor))
+
+sim_ajustado |> head() |> kable()
+```
+
+```{r}
+set.seed(123)
+
+data_split <- initial_split(sim_ajustado, prop = 0.8)
+
+train_split <- training(data_split)
+test_split <- testing(data_split)
+
+nrow(train_split)
+nrow(test_split)
+```
+
+```{r}
+metrix <- metric_set(accuracy, precision, kap)
+
+log_model <- 
+  logistic_reg(mixture = 1) |> 
+  set_engine("glm")
+
+prep_steps <- 
+  recipe(motociclista ~ ., train_split) |>
+  step_dummy(all_nominal_predictors()) |> 
+  step_normalize(all_numeric_predictors())
+
+prep_steps |> summary() |> kable()
+
+prep_steps |> prep() |> juice() |> head() |> kable()
+```

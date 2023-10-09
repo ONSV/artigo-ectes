@@ -132,7 +132,7 @@ log_fit <-
   log_wflow |> 
   fit(best_fold)
 
-log_fit |> tidy() |> kable()
+log_fit
 ```
 
 ```{r}
@@ -148,3 +148,8 @@ metricas <- metric_set(accuracy, precision, sens)
 
 metricas(log_preds, truth = motociclista, estimate = .pred_class)
 ```
+
+```{r}
+conf_mat(data = log_preds, estimate = .pred_class, truth = motociclista)
+```
+

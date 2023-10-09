@@ -31,7 +31,7 @@ data_prep <- function(x) {
    
 }
 
-modelo_motociclista <- function(x) {
+train_test_split <- function(x) {
   
   #set seed
   set.seed(123)
@@ -42,32 +42,30 @@ modelo_motociclista <- function(x) {
   train_split <- training(data_split)
   test_split <- testing(data_split)
   
-  #conjunto de métricas
+  return(list(train = train_split, test = test_split))
+}
+
+get_best_cvfold <- function(x) {
+  
   metrix <- metric_set(accuracy, precision, sens, roc_auc)
   
-  #declarar modelo
   log_model <- 
     logistic_reg(mixture = 1) |> 
     set_engine("glm")
   
-  #etapas de pré-processamento
   prep_steps <- 
-    recipe(motociclista ~ ., train_split) |>
+    recipe(motociclista ~ ., x) |>
     step_dummy(all_nominal_predictors())
   
-  #criandos folds de cv
-  data_folds <- vfold_cv(data = train_split)
+  data_folds <- vfold_cv(data = x)
   
-  #criando workflow para o modelo
   log_wflow <- 
     workflow() |> 
     add_recipe(prep_steps) |> 
     add_model(log_model)
   
-  #ajuste cross-validation
   log_cvfit <- fit_resamples(object = log_wflow, resamples = data_folds, metrics = metrix)
   
-  #descobrind melhor subconjunto
   best_fold_id <- log_cvfit |> 
     collect_metrics(summarize = FALSE) |> 
     pivot_wider(names_from = .metric, values_from = .estimate) |> 
@@ -78,29 +76,48 @@ modelo_motociclista <- function(x) {
     str_sub(-1,) |> 
     as.numeric()
   
-  #extraindo melhor fold
   best_fold <- analysis(log_cvfit$splits[[best_fold_id]])
   
-  #treinando e prevendo novo modelo
+  return(best_fold)
+}
+
+log_modeller <- function(x, test) {
+  
+  log_model <- 
+    logistic_reg(mixture = 1) |> 
+    set_engine("glm")
+  
+  prep_steps <- 
+    recipe(motociclista ~ ., x) |>
+    step_dummy(all_nominal_predictors())
+  
+  log_wflow <- 
+    workflow() |> 
+    add_recipe(prep_steps) |> 
+    add_model(log_model)
+  
   log_fit <-
     log_wflow |> 
-    fit(best_fold)
+    fit(x)
   
   log_preds <- log_fit |> 
-    predict(test_split) |> 
-    bind_cols(test_split)
+    predict(test) |> 
+    bind_cols(test)
   
-  #testando modelo
   metricas <- metric_set(accuracy, precision, sens)
-  metricas_res <- metricas(log_preds, truth = motociclista, estimate = .pred_class)
+  metricas_res <- metricas(log_preds,
+                           truth = motociclista,
+                           estimate = .pred_class)
   
-  #extraindo coeficientes
   coefs <- 
-    log_fit |> 
+    log_fit |>
     tidy() |> 
     mutate(
       odds = exp(estimate)
     )
   
-  return(list(predictions = log_preds, metrics = metricas_res, coefs = coefs))
+  return(list(predictions = log_preds,
+              metrics = metricas_res,
+              coefs = coefs,
+              fit = log_fit))
 }

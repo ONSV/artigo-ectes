@@ -8,6 +8,10 @@ load(here("data","sim.rda"))
 
 source("R/scripts.R")
 
-dados <- data_prep(sim)
+data <- data_prep(sim)
 
-modelo <- modelo_motociclista(dados)
+data_train_test <- train_test_split(data)
+
+best_fold <- get_best_cvfold(x = data_train_test$train)
+
+log_model <- log_modeller(x = best_fold, test = data_train_test$test)

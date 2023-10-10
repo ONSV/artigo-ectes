@@ -1,0 +1,226 @@
+---
+title: Teste de modelos para classificação
+
+format: 
+  html: 
+    toc: true
+    toc-depth: 2
+    theme: style.scss  
+        
+title-block-banner: true
+---
+
+## Importação
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(here)
+library(knitr)
+library(vip)
+load(here("data","sim.rda"))
+options(scipen = 999)
+```
+
+## Limpando dados
+
+```{r}
+sim_tratado <- sim |> 
+  mutate(
+    IDADE = if_else(
+      grepl("anos", IDADE),
+      str_sub(IDADE,1,3),
+      "0"
+    ),
+    IDADE = as.numeric(IDADE),
+    ESC_DECOD = factor(
+      ESC_DECOD,
+      levels = c("nenhuma","1 a 3 anos","4 a 7 anos","8 a 11 anos","12 a mais")
+    )
+  ) |> 
+  drop_na() |> 
+  select(IDADE, RACACOR, SEXO, ESTCIV, LOCOCOR, ESC_DECOD, MOTOCICLISTA) |> 
+  rename(idade = IDADE,
+         cor = RACACOR,
+         sexo = SEXO,
+         estado_civil = ESTCIV,
+         local_obito = LOCOCOR,
+         escolaridade = ESC_DECOD,
+         motociclista = MOTOCICLISTA) |> 
+  mutate(across(c(cor, sexo, estado_civil, local_obito, motociclista), 
+                as_factor))
+
+sim_tratado |> head() |> kable()
+```
+
+## Separando dados em treino e teste
+
+```{r}
+set.seed(123)
+
+data_split <- initial_split(sim_tratado, prop = 0.8)
+
+train_split <- training(data_split)
+test_split <- testing(data_split)
+
+nrow(train_split)
+nrow(test_split)
+```
+
+## Pré-processamento
+
+```{r}
+prep_steps <- 
+  recipe(motociclista ~ ., train_split) |>
+  step_dummy(all_nominal_predictors()) |> 
+  step_normalize(all_numeric_predictors())
+
+prep_steps
+```
+
+## Conjunto de Métricas
+
+```{r}
+metrix <- metric_set(accuracy, precision, roc_auc)
+```
+
+## Criação do modelo
+
+```{r}
+rf_model <- 
+  rand_forest(trees = 50) |> 
+  set_mode("classification") |> 
+  set_engine("ranger", importance = "impurity")
+
+rf_model
+```
+
+## Criação de workflow
+
+```{r}
+rf_wflow <-
+  workflow() |> 
+  add_recipe(prep_steps) |> 
+  add_model(rf_model)
+
+rf_wflow
+```
+
+## Ajuste de modelo por Cross Validation
+
+```{r}
+data_folds <- vfold_cv(train_split)
+
+rf_10fold <- fit_resamples(object = rf_wflow, metrics = metrix, resamples = data_folds)
+
+rf_10fold |> collect_metrics(summarize = FALSE) |> kable()
+```
+
+## Analisando métricas para Cross Validation
+
+```{r}
+best_rf_10fold <- collect_metrics(x = rf_10fold, summarize = FALSE)
+
+best_rf_10fold |> kable()
+
+best_rf_10fold |>  
+  filter(.metric == "accuracy") |> 
+  filter(.estimate == max(.estimate)) |> 
+  kable()
+
+best_rf_10fold |>  
+  filter(.metric == "precision") |> 
+  filter(.estimate == max(.estimate)) |> 
+  kable()
+
+best_rf_10fold |>  
+  filter(.metric == "roc_auc") |> 
+  filter(.estimate == max(.estimate)) |> 
+  kable()
+```
+
+## Extraindo melhores subconjuntos
+
+```{r}
+rf_fold2_data <- analysis(data_folds$splits[[2]])
+rf_fold7_data <- analysis(data_folds$splits[[7]])
+rf_fold8_data <- analysis(data_folds$splits[[8]])
+```
+
+## Ajustando melhores modelos
+
+```{r}
+rf_fold2_fit <- 
+  rf_wflow |> 
+  fit(rf_fold2_data)
+
+rf_fold7_fit <- 
+  rf_wflow |> 
+  fit(rf_fold7_data)
+
+rf_fold8_fit <- 
+  rf_wflow |> 
+  fit(rf_fold8_data)
+```
+
+```{r}
+rf_fold2_fit
+```
+
+## Predição com o conjunto de teste
+
+```{r}
+rf_pred <- bind_cols(
+  test_split,
+  rename(predict(rf_fold2_fit, test_split), pred_fold2 = .pred_class),
+  rename(predict(rf_fold7_fit, test_split), pred_fold7 = .pred_class),
+  rename(predict(rf_fold8_fit, test_split), pred_fold8 = .pred_class)
+)
+
+rf_pred |> head() |> kable()
+```
+
+## Acurácia de melhores modelos
+
+```{r}
+accuracy(rf_pred, truth = motociclista, estimate = pred_fold2) |> kable()
+accuracy(rf_pred, truth = motociclista, estimate = pred_fold7) |> kable()
+accuracy(rf_pred, truth = motociclista, estimate = pred_fold8) |> kable()
+```
+
+## Precisão dos melhores modelos
+
+```{r}
+precision(rf_pred, truth = motociclista, estimate = pred_fold2) |> kable()
+precision(rf_pred, truth = motociclista, estimate = pred_fold7) |> kable()
+precision(rf_pred, truth = motociclista, estimate = pred_fold8) |> kable()
+```
+
+## Extraindo nível de importância de variáveis
+
+```{r}
+rf_fold2_fit |> 
+  extract_fit_parsnip() |>
+  vip()
+```
+
+```{r}
+library(rpart.plot)
+
+tree_spec <-
+  decision_tree(cost_complexity = 0, tree_depth = 5, min_n = 15) |> 
+  set_engine("rpart") |> 
+  set_mode("classification")
+
+tree_wflow <- 
+  workflow() |> 
+  add_recipe(prep_steps) |> 
+  add_model(tree_spec)
+
+tree_fit <- tree_wflow |> 
+  fit(train_split)
+
+tree_fit |> predict(test_split)
+
+tree_fit$fit$fit$fit |> prp()
+```

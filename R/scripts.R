@@ -10,7 +10,13 @@ data_prep <- function(x) {
       IDADE = as.numeric(IDADE),
       ESC_DECOD = factor(
         ESC_DECOD,
-        levels = c("nenhuma","1 a 3 anos","4 a 7 anos","8 a 11 anos","12 a mais")
+        levels = c(
+          "nenhuma",
+          "1 a 3 anos",
+          "4 a 7 anos",
+          "8 a 11 anos",
+          "12 a mais"
+        )
       )
     ) |> 
     drop_na() |> 
@@ -23,9 +29,10 @@ data_prep <- function(x) {
       local_obito = LOCOCOR,
       escolaridade = ESC_DECOD,
       motociclista = MOTOCICLISTA) |> 
-    mutate(across(c(cor, sexo, estado_civil, local_obito), 
-                  as_factor),
-           motociclista = factor(motociclista, levels = c("nao","sim")))
+    mutate(
+      across(c(cor, sexo, estado_civil, local_obito), as_factor),
+      motociclista = factor(motociclista, levels = c("nao","sim"))
+    )
  
   return(x_prep)
    
@@ -64,7 +71,11 @@ get_best_cvfold <- function(x) {
     add_recipe(prep_steps) |> 
     add_model(log_model)
   
-  log_cvfit <- fit_resamples(object = log_wflow, resamples = data_folds, metrics = metrix)
+  log_cvfit <- fit_resamples(
+    object = log_wflow,
+    resamples = data_folds,
+    metrics = metrix
+  )
   
   best_fold_id <- log_cvfit |> 
     collect_metrics(summarize = FALSE) |> 
@@ -105,19 +116,21 @@ log_modeller <- function(x, test) {
     bind_cols(test)
   
   metricas <- metric_set(accuracy, precision, sens)
-  metricas_res <- metricas(log_preds,
-                           truth = motociclista,
-                           estimate = .pred_class)
+  metricas_res <- metricas(
+    log_preds,
+    truth = motociclista,
+    estimate = .pred_class
+  )
   
   coefs <- 
     log_fit |>
     tidy() |> 
-    mutate(
-      odds = exp(estimate)
-    )
+    mutate(odds = exp(estimate))
   
-  return(list(predictions = log_preds,
-              metrics = metricas_res,
-              coefs = coefs,
-              fit = log_fit))
+  return(list(
+    predictions = log_preds,
+    metrics = metricas_res,
+    coefs = coefs,
+    fit = log_fit
+  ))
 }

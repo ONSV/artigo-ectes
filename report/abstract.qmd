@@ -1,0 +1,19 @@
+---
+title: Modelo de Classificação para Vítimas Motociclistas de Mortes no Trânsito
+
+format: 
+  html: 
+    toc: true
+    toc-depth: 2
+    theme: style.scss
+    
+title-block-banner: true
+---
+
+```{r}
+library(here)
+source(here("R/main.R"))
+```
+
+## Introdução
+

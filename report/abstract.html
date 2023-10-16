@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="pt-br" xml:lang="pt-br"><head>
 
 <meta charset="utf-8">
 <meta name="generator" content="quarto-1.3.450">
@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Modelo de Classificação para Vítimas Motociclistas em Mortes no Trânsito</title>
+<title>Modelo de Classificação para Vítimas Motociclistas de Mortes no Trânsito</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -20,7 +20,26 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
-</style>
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
 
 
 <script src="abstract_files/libs/clipboard/clipboard.min.js"></script>
@@ -42,7 +61,7 @@ ul.task-list li input[type="checkbox"] {
 <header id="title-block-header" class="quarto-title-block default page-columns page-full">
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-body">
-      <h1 class="title">Modelo de Classificação para Vítimas Motociclistas em Mortes no Trânsito</h1>
+      <h1 class="title">Modelo de Classificação para Vítimas Motociclistas de Mortes no Trânsito</h1>
                       </div>
   </div>
     
@@ -57,16 +76,54 @@ ul.task-list li input[type="checkbox"] {
   
   </header><div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
 <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-  
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Índice</h2>
+   
+  <ul class="collapse">
+  <li><a href="#abstract" id="toc-abstract" class="nav-link active" data-scroll-target="#abstract">Abstract</a></li>
+  <li><a href="#referências" id="toc-referências" class="nav-link" data-scroll-target="#referências">Referências</a></li>
+  </ul>
+</nav>
 </div>
 <main class="content quarto-banner-title-block" id="quarto-document-content">
 
 
 
 
+<section id="abstract" class="level2">
+<h2 class="anchored" data-anchor-id="abstract">Abstract</h2>
+<section id="introdução" class="level3">
+<h3 class="anchored" data-anchor-id="introdução">Introdução</h3>
+<p>Atualmente, as motocicletas são veículos notórios pelos seus elevados registros de acidentes e mortes no trânsito quando comparadas aos demais modais de locomoção urbana. Mais da metade das mortes no trânsito incluem motociclistas, ciclistas ou pedestres <span class="citation" data-cites="organizaçãomundialdasaúde2018">(<a href="#ref-organizaçãomundialdasaúde2018" role="doc-biblioref">Organização Mundial da Saúde 2018</a>)</span>, visto que as motocicletas lideram como os veículos com maiores números de fatalidades desde sua consolidação como um dos principais meios de transporte da sociedade moderna. É evidente que a proporção de acidentes relacionados à motocicletas está constantemente aumentando desde 1996 <span class="citation" data-cites="vasconcellos2013">(<a href="#ref-vasconcellos2013" role="doc-biblioref">Vasconcellos 2013</a>)</span>. Ademais, a associação deste modal com comportamento indevido no trânsito e serviços de entrega fazem com que os indivíduos desta categoria de motorista sejam frequentemente inseridos em situações de risco <span class="citation" data-cites="cunto2017">(<a href="#ref-cunto2017" role="doc-biblioref">Cunto e Ferreira 2017</a>)</span>. Estas mortes no trânsito configuram um obstáculo de saúde pública nacional, propiciando a geração de novas literaturas focadas em ratificar as carências do sistema de segurança viária do país por meio de políticas como a redução da tolerância de concentração de álcool no sangue, redução da velocidade legal, obrigatoriedade dos capacetes, entre outros <span class="citation" data-cites="miller2018">(<a href="#ref-miller2018" role="doc-biblioref">Miller, Levy, e Swedler 2018</a>)</span>.</p>
+</section>
+<section id="materiais-e-métodos" class="level3">
+<h3 class="anchored" data-anchor-id="materiais-e-métodos">Materiais e métodos</h3>
+<p>Estes aspectos estimulam o presente estudo a investigar a ocorrência de sinistros fatais no trânsito nacional por meio do ajuste de um algoritmo classificador de aprendizado de máquina, visando não apenas criar um modelo capaz de detectar padrões entre as vítimas motociclistas como também estudar a importância estatística de cada variável considerada para sua confecção. Este modelo é uma Regressão Logística que prevê a classificação binária das vítimas (se são ou não motociclistas), se baseando nas variáveis preditivas, entre elas idade, etnia, sexo, escolaridade, estado civil e o local de ocorrência do óbito.</p>
+</section>
+<section id="resultados-e-conclusão" class="level3">
+<h3 class="anchored" data-anchor-id="resultados-e-conclusão">Resultados e conclusão</h3>
+<p>O treinamento do modelo foi efetuado com uma combinação das técnicas de <em>hold out</em> e Validação Cruzada, com as métricas para acurácia, precisão e sensibilidade de 0,67, 0,69 e 0,92 respectivamente, demonstrando a significância de variáveis como idade, sexo e escolaridade para o desempenho do classificador.</p>
+</section>
+</section>
+<section id="referências" class="level2 unnumbered">
 
 
-</main>
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography"><h2 class="anchored quarto-appendix-heading">Referências</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-cunto2017" class="csl-entry" role="listitem">
+Cunto, Flávio J. C., e Sara Ferreira. 2017. <span>“An Analysis of the Injury Severity of Motorcycle Crashes in Brazil Using Mixed Ordered Response Models”</span>. <em>Journal of Transportation Safety &amp; Security</em> 9 (sup1): 33–46. <a href="https://doi.org/10.1080/19439962.2016.1162891">https://doi.org/10.1080/19439962.2016.1162891</a>.
+</div>
+<div id="ref-miller2018" class="csl-entry" role="listitem">
+Miller, Ted R, David T. Levy, e David I. Swedler. 2018. <span>“Lives Saved by Laws and Regulations That Resulted from the Bloomberg Road Safety Program”</span>. <em>Accident Analysis &amp; Prevention</em> 113 (abril): 131–36. <a href="https://doi.org/10.1016/j.aap.2018.01.014">https://doi.org/10.1016/j.aap.2018.01.014</a>.
+</div>
+<div id="ref-organizaçãomundialdasaúde2018" class="csl-entry" role="listitem">
+Organização Mundial da Saúde. 2018. <em>Global Status Report on Road Safety 2018</em>. Geneva: World Health Organization. <a href="https://iris.who.int/handle/10665/276462">https://iris.who.int/handle/10665/276462</a>.
+</div>
+<div id="ref-vasconcellos2013" class="csl-entry" role="listitem">
+Vasconcellos, Eduardo Alcântara De. 2013. <span>“Road Safety Impacts of the Motorcycle in Brazil”</span>. <em>International Journal of Injury Control and Safety Promotion</em> 20 (2): 144–51. <a href="https://doi.org/10.1080/17457300.2012.696663">https://doi.org/10.1080/17457300.2012.696663</a>.
+</div>
+</div></section></div></main>
 <!-- /main column -->
 <script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {
@@ -122,12 +179,12 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     // flash "checked"
     button.classList.add('code-copy-button-checked');
     var currentTitle = button.getAttribute("title");
-    button.setAttribute("title", "Copied!");
+    button.setAttribute("title", "Copiada");
     let tooltip;
     if (window.bootstrap) {
       button.setAttribute("data-bs-toggle", "tooltip");
       button.setAttribute("data-bs-placement", "left");
-      button.setAttribute("data-bs-title", "Copied!");
+      button.setAttribute("data-bs-title", "Copiada");
       tooltip = new bootstrap.Tooltip(button, 
         { trigger: "manual", 
           customClass: "code-copy-button-tooltip",

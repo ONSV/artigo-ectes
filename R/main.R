@@ -6,7 +6,7 @@ library(here)
 library(knitr)
 load(here("data","sim.rda"))
 
-source("R/scripts.R")
+source(here("R/scripts.R"))
 
 data <- data_prep(sim)
 

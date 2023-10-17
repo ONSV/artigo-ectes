@@ -11,7 +11,7 @@ title-block-banner: true
 ---
 
 -   Os dados foram coletados e tratados em `data-raw/` e armazenados em `data/`.
--   Podem ser importados e analisados para prever ser um modelo classificador pode ser utilizado.
+-   Podem ser importados e analisados para prever se um modelo classificador pode ser utilizado.
 
 ## Importação
 

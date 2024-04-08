@@ -3,6 +3,7 @@ library(ggplot2)
 library(ISLR)
 library(onsvplot)
 library(yardstick)
+library(vip)
 source("R/main.R")
 
 load("data/sim.rda")
@@ -75,13 +76,42 @@ cm$table |>
   labs(x = "True Classes", y = "Predicted Classes")
 
 
-log_model$fit |> 
+summary(cm, event_level = "second")
+
+probs <- 
+  log_model$fit |> 
   predict(log_model$predictions, type = "prob") |> 
-  bind_cols(log_model$predictions) |> 
-  roc_curve(motociclista, .pred_nao) |> 
+  bind_cols(log_model$predictions)
+
+probs |>
+  roc_curve(motociclista, .pred_sim, event_level = "second") |>
   ggplot(aes(x = 1 - specificity, y = sensitivity)) +
-  geom_path() +
+  geom_path(aes(color = "Predicted curve")) +
   geom_abline(lty = 3) +
   coord_equal() +
-  theme_minimal()
-  
+  theme_minimal() +
+  geom_segment(aes(
+    x = 0,
+    xend = 0,
+    y = 0,
+    yend = 1,
+    color = "Ideal curve"
+  ), linetype = "longdash") +
+  geom_segment(aes(
+    x = 0,
+    xend = 1,
+    y = 1,
+    yend = 1,
+    color = "Ideal curve"
+  ), linetype = "longdash") +
+  geom_point(aes(0, 1, color = "Ideal curve")) +
+  labs(x = "Specificity", y = "Sensitivity")
+
+roc_auc(probs, motociclista, .pred_sim, event_level = "second")
+
+log_model$fit |> 
+  extract_fit_parsnip() |> 
+  tidy() |> 
+  mutate(estimate = exp(estimate)) |> 
+  filter(p.value < 0.05)
+

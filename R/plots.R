@@ -1,6 +1,8 @@
-library(tidyverse)
+library(dplyr)
+library(ggplot2)
 library(ISLR)
 library(onsvplot)
+library(yardstick)
 source("R/main.R")
 
 load("data/sim.rda")
@@ -31,7 +33,7 @@ Default |>
     student = case_match(student, "No" ~ 0, "Yes" ~ 1)
   ) |>
   ggplot(aes(balance, default)) +
-  geom_point(alpha = .25, color = onsv_palette$yellow) +
+  geom_point(alpha = .10, color = onsv_palette$yellow) +
   geom_segment(aes(
     x = 0,
     xend = 2700,
@@ -53,3 +55,33 @@ Default |>
   theme_minimal() +
   scale_x_continuous(limits = c(0, 2800)) +
   labs(x = NULL, y = NULL)
+
+cm <- log_model$predictions |>
+  mutate(
+    motociclista = fct_recode(motociclista, Yes = "sim", No = "nao"),
+    .pred_class = fct_recode(.pred_class, Yes = "sim", No = "nao")
+  ) |>
+  conf_mat(truth = motociclista, estimate = .pred_class)
+  
+cm$table |> 
+  as_tibble() |> 
+  ggplot(aes(Truth, Prediction)) +
+  geom_tile(aes(fill = n), show.legend = F) +
+  geom_text(aes(label = n, color = if_else(n > 10000, "white", "black"))) +
+  scale_fill_gradientn(colors = rev(c(onsv_palette$blue, 
+                                      onsv_palette$lightblue))) +
+  scale_color_identity() +
+  coord_fixed() +
+  labs(x = "True Classes", y = "Predicted Classes")
+
+
+log_model$fit |> 
+  predict(log_model$predictions, type = "prob") |> 
+  bind_cols(log_model$predictions) |> 
+  roc_curve(motociclista, .pred_nao) |> 
+  ggplot(aes(x = 1 - specificity, y = sensitivity)) +
+  geom_path() +
+  geom_abline(lty = 3) +
+  coord_equal() +
+  theme_minimal()
+  

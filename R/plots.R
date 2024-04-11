@@ -70,19 +70,27 @@ cm <- log_model$predictions |>
   ) |>
   conf_mat(truth = motociclista, estimate = .pred_class)
   
-cm_heatmap <- cm$table |> 
-  as_tibble() |> 
+cm_heatmap <- cm$table |>
+  as_tibble() |>
   ggplot(aes(Truth, Prediction)) +
   geom_tile(aes(fill = n), show.legend = F, color = "white") +
-  geom_text(aes(label = n, color = if_else(n > 10000, "white", "black"))) +
-  scale_fill_gradientn(colors = rev(c(onsv_palette$blue, 
-                                      onsv_palette$lightblue))) +
+  geom_text(aes(label = n, color = if_else(n > 10000, "white", "black")), size = 6) +
+  scale_fill_gradientn(colors = rev(c(
+    onsv_palette$blue,
+    onsv_palette$lightblue
+  ))) +
   scale_color_identity() +
   scale_y_discrete() +
   coord_fixed() +
   theme_minimal() +
   labs(x = "Truth", y = "Predicted") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.title = element_text(size = 15),
+    axis.text = element_text(size = 12),
+    plot.margin = margin()
+  )
 
 probs <- 
   log_model$fit |> 
@@ -126,20 +134,19 @@ metric_tbl <- summary(cm, event_level = "second") |>
 roc_plot <- probs |>
   roc_curve(motociclista, .pred_sim, event_level = "second") |>
   ggplot(aes(x = 1 - specificity, y = sensitivity)) +
-  geom_path(color = onsv_palette$blue, lty = "longdash") +
-  geom_area(fill = onsv_palette$blue, alpha = 0.2) +
+  geom_path(color = onsv_palette$blue) +
   geom_abline(lty = 2, color = onsv_palette$red) +
   coord_equal() +
   theme_minimal() +
   labs(x = "False Positive Rate", y = "True Positive Rate") +
   theme(plot.margin = margin(0.3, 0.3, 0.1, 0.3, "cm"),
-        axis.text = element_text(size = 8),
-        axis.title = element_text(size = 10))
+        axis.text = element_text(size = 10),
+        axis.title = element_text(size = 13))
 
 terms <-
   data.frame(
     vars = c(
-      "|Age",
+      "Age|Age",
       "White|Race",
       "Black|Race",
       "Native|Race",
@@ -175,9 +182,10 @@ odds_tbl <- log_model$fit |>
   set_header_labels(var = "Variable",
                     class = "Classes",
                     estimate = "Odds Ratio",
-                    p.value = "P-value") |>
+                    p.value = "p-value") |>
   autofit() |>
   merge_v(j = ~ var) |> 
+  merge_h(i = ~var=="Age") |> 
   bg(
     j = ~ estimate,
     bg = col_numeric(palette = "RdBu", domain = c(0.4, 1.5)),
@@ -198,8 +206,7 @@ odds_tbl <- log_model$fit |>
   bg(bg = onsv_palette$blue, part = "header") |>
   theme_vanilla()
 
-ggsave("plots/heatmap.png", cm_heatmap, bg = "transparent", dpi = 300, height = 5, units = "cm")
-ggsave("plots/roc.png", roc_plot, bg = "transparent", dpi = 300, height = 8, units = "cm")
-save_as_image(metric_tbl, "plots/metric.png", res = 300, expand = 0)
-save_as_image(odds_tbl, "plots/odds.png", res = 300, expand = 0)
-
+ggsave("plots/heatmap.png", cm_heatmap, bg = "transparent", dpi = 300, height = 8, units = "cm", width = 8)
+ggsave("plots/roc.png", roc_plot, bg = "transparent", dpi = 300, height = 10, units = "cm", width = 10)
+save_as_image(metric_tbl, "plots/metric.png", res = 300, expand = 10)
+save_as_image(odds_tbl, "plots/odds.png", res = 300, expand = 9)

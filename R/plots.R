@@ -118,24 +118,26 @@ metric_tbl <- summary(cm, event_level = "second") |>
   colformat_double(digits = 3) |>
   set_header_labels(.metric = "Metric", .estimate = "Value") |>
   autofit() |>
-  bg(j = ~ .estimate, bg = col_numeric("RdBu", c(0, 1))) |>
+  bg(j = ~ .estimate, bg = col_numeric(c(
+    onsv_palette$yellow, "white", onsv_palette$blue
+  ), c(0, 1))) |>
   color(
     j = ~ .estimate,
-    i = ~ .estimate < 0.2 | .estimate > 0.8,
+    i = ~ .estimate > 0.8,
     color = "white"
   ) |>
   fontsize(size = 9, part = "all") |>
   line_spacing(space = 0.55, part = "body") |>
   line_spacing(space = 0.6, part = "header") |>
   color(color = "white", part = "header") |>
-  bg(bg = onsv_palette$blue, part = "header") |> 
+  bg(bg = onsv_palette$blue, part = "header") |>
   theme_vanilla()
 
 roc_plot <- probs |>
   roc_curve(motociclista, .pred_sim, event_level = "second") |>
   ggplot(aes(x = 1 - specificity, y = sensitivity)) +
   geom_path(color = onsv_palette$blue) +
-  geom_abline(lty = 2, color = onsv_palette$red) +
+  geom_abline(lty = 2, color = onsv_palette$yellow) +
   coord_equal() +
   theme_minimal() +
   labs(x = "False Positive Rate", y = "True Positive Rate") +
@@ -174,29 +176,34 @@ odds_tbl <- log_model$fit |>
   filter(term != "(Intercept)") |>
   bind_cols(terms) |>
   relocate(vars) |>
-  select(vars, estimate, p.value) |> 
-  separate(vars, into = c("class", "var"), sep = "\\|") |> 
-  relocate(var) |> 
+  select(vars, estimate, p.value) |>
+  separate(vars, into = c("class", "var"), sep = "\\|") |>
+  relocate(var) |>
   flextable() |>
   colformat_double(digits = 3) |>
-  set_header_labels(var = "Variable",
-                    class = "Classes",
-                    estimate = "Odds Ratio",
-                    p.value = "p-value") |>
+  set_header_labels(
+    var = "Variable",
+    class = "Classes",
+    estimate = "Odds Ratio",
+    p.value = "p-value"
+  ) |>
   autofit() |>
-  merge_v(j = ~ var) |> 
-  merge_h(i = ~var=="Age") |> 
+  merge_v(j = ~ var) |>
+  merge_h(i = ~ var == "Age") |>
   bg(
     j = ~ estimate,
-    bg = col_numeric(palette = "RdBu", domain = c(0.4, 1.5)),
+    bg = col_numeric(
+      palette = c(onsv_palette$yellow, "white", onsv_palette$blue),
+      domain = c(0.4, 1.5)
+    ),
     part = "body"
   ) |>
-  color(j = ~ p.value,
-        color = onsv_palette$red,
+  bg(j = ~ p.value,
+        bg = onsv_palette$yellow,
         i = ~ p.value > 0.05) |>
   color(
     j = ~ estimate,
-    i = ~ estimate > 1.4 | estimate < 0.6,
+    i = ~ estimate > 1.4,
     color = "white"
   ) |>
   fontsize(size = 9, part = "all") |>

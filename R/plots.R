@@ -145,28 +145,13 @@ roc_plot <- probs |>
         axis.text = element_text(size = 10),
         axis.title = element_text(size = 13))
 
-terms <-
-  data.frame(
-    vars = c(
-      "Age|Age",
-      "White|Race",
-      "Black|Race",
-      "Native|Race",
-      "Asian|Race",
-      "Female|Sex",
-      "Married|Marital status",
-      "Common law|Marital status",
-      "Widowed|Marital status",
-      "Divorced|Marital status",
-      "Road|Place of death",
-      "Home|Place of death",
-      "Others|Place of death",
-      "Health Est.|Place of death",
-      "1-3 years|Ed. level",
-      "4-7 years|Ed. level",
-      "8-11 years|Ed. level",
-      "12+ years|Ed. level"
-    )
+missing_levels <-
+  c(
+    "cor_parda",
+    "sexo_masculino",
+    "estado_civil_solteiro",
+    "local_obito_hospital",
+    "escolaridade_nenhuma"
   )
 
 odds_tbl <- log_model$fit |>
@@ -174,33 +159,72 @@ odds_tbl <- log_model$fit |>
   tidy() |>
   mutate(estimate = exp(estimate)) |>
   filter(term != "(Intercept)") |>
-  bind_cols(terms) |>
-  relocate(vars) |>
-  select(vars, estimate, p.value) |>
-  separate(vars, into = c("class", "var"), sep = "\\|") |>
-  relocate(var) |>
-  flextable() |>
-  colformat_double(digits = 3) |>
+  complete(term = missing_levels,
+           fill = list(estimate = 1, p.value = NA)) |>
+  mutate(
+    var = word(term, 1, sep = "\\_"),
+    term = case_when(
+      str_detect(term, "amarela") ~ "Asian",
+      str_detect(term, "branca") ~ "White",
+      str_detect(term, "indigena") ~ "Native",
+      str_detect(term, "parda") ~ "Mixed",
+      str_detect(term, "preta") ~ "Black",
+      str_detect(term, "1.a.3") ~ "1-3 years",
+      str_detect(term, "4.a.7") ~ "4-7 years",
+      str_detect(term, "8.a.11") ~ "8-11 years",
+      str_detect(term, "12") ~ "12+ years",
+      str_detect(term, "nenhuma") ~ "None",
+      str_detect(term, "solteiro") ~ "Single",
+      str_detect(term, "casado") ~ "Married",
+      str_detect(term, "uniao") ~ "Common-law",
+      str_detect(term, "viuvo") ~ "Widowed",
+      str_detect(term, "separado") ~ "Divorced",
+      str_detect(term, "idade") ~ "Age",
+      str_detect(term, "hospital") ~ "Hospital",
+      str_detect(term, "via") ~ "Road",
+      str_detect(term, "domicilio") ~ "Home",
+      str_detect(term, "outros") ~ "Others",
+      str_detect(term, "saude") ~ "Health Est.",
+      str_detect(term, "masculino") ~ "Male",
+      str_detect(term, "feminino") ~ "Female",
+      .default = term
+    ),
+    var = case_match(
+      var,
+      "cor" ~ "Race",
+      "escolaridade" ~ "Ed. level",
+      "estado" ~ "Marital status",
+      "idade" ~ "Age",
+      "local" ~ "Place of death",
+      "sexo" ~ "Sex",
+      .default = var
+    ),
+    .before = 1
+  ) |>
+  arrange(var) |> 
+  select(var, term, estimate, p.value) |> 
+  flextable() |> 
+  colformat_double(digits = 3) |> 
   set_header_labels(
     var = "Variable",
-    class = "Classes",
+    term = "Classes",
     estimate = "Odds Ratio",
     p.value = "p-value"
-  ) |>
-  autofit() |>
+  ) |> 
+  autofit() |> 
   merge_v(j = ~ var) |>
   merge_h(i = ~ var == "Age") |>
   bg(
     j = ~ estimate,
     bg = col_numeric(
       palette = c(onsv_palette$yellow, "white", onsv_palette$blue),
-      domain = c(0.4, 1.5)
+      domain = c(0.45, 1.55)
     ),
     part = "body"
   ) |>
   bg(j = ~ p.value,
-        bg = onsv_palette$yellow,
-        i = ~ p.value > 0.05) |>
+     bg = onsv_palette$yellow,
+     i = ~ p.value > 0.05) |>
   color(
     j = ~ estimate,
     i = ~ estimate > 1.4,

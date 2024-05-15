@@ -5,7 +5,9 @@ format:
   html: 
     toc: true
     toc-depth: 2
-    theme: style.scss  
+    theme: style.scss
+    message: false
+    warning: false
         
 title-block-banner: true
 ---
